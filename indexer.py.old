@@ -1,0 +1,76 @@
+import os
+import time
+import typesense
+import magic
+
+# Creating the Typesense client
+client = typesense.Client({
+  'nodes': [{
+    'host': 'localhost',  # Update with your Typesense server details
+    'port': '8108',       # Update with the appropriate port
+    'protocol': 'http'    # Use 'https' for secure connections
+  }],
+  'api_key': 'GkxVS70yMTFS7RJ9BEz6sjpPG6Ij7kdqTx7tGLIZ0AM1fJ4X',  # Replace with your Typesense API key
+  'connection_timeout_seconds': 2
+})
+
+file_schema = {
+  'name': 'files',
+  'fields': [
+    {'name': 'file_name', 'type': 'string' },
+    {'name': 'date_created', 'type': 'string'},
+    {'name': 'date_modified', 'type': 'string'},
+    {'name': 'file_type', 'type': 'string', 'facet': True},
+    {'name': 'file_location', 'type': 'string'}
+  ],
+}
+
+client.collections.create(file_schema)
+
+# Function to index a file
+def index_file(file_path):
+    file_name = os.path.basename(file_path)
+    file_stat = os.stat(file_path)
+    file_created = time.ctime(file_stat.st_ctime)
+    file_modified = time.ctime(file_stat.st_mtime)
+    file_type = magic.from_buffer(open(file_path, 'rb').read(2048),mime=True)
+
+   # Create a document object
+    document = {
+        'file_name': file_name,
+        'date_created': file_created,
+        'date_modified': file_modified,
+        'file_type': file_type,
+        'file_location': file_path
+    }
+
+    # Index the document
+    client.collections['files'].documents.create(document=document)
+    print(f"Indexed file: {file_path}")
+
+# Traverse the file system and index files
+def index_file_system(root_dir):
+    for root, dirs, files in os.walk(root_dir):
+        # Exclude specific directories from indexing
+        excluded_dirs = ['build', 'temp', 'cache','bin','target','debug','release','dist','build','node_modules','venv','__pycache__', '.git', '.idea', '.vscode', '.pytest_cache', '.mypy_cache', '.cache', '.eggs', '.tox', '.ipynb_checkpoints', '.pytest_cache', '.mypy_cache', '.cache', '.eggs', '.tox', '.ipynb_checkpoints','lib','.config','.local','.vs','packages','examples','OneDrive Personal', 'OneDrive MCVTS','.var']
+        dirs[:] = [d for d in dirs if d not in excluded_dirs]
+
+        for file in files:
+            file_path = os.path.join(root, file)
+
+            # Exclude specific file extensions from indexing
+            if file.endswith(('.o', '.a', '.so','.h','.pyc','.cfg','.class','.dll','.gitattributes','.gitignore','.gitmodules','.gitkeep','.gitlab-ci.yml','.gitpod.yml','.gitpod.Dockerfile','.gitpod.dockerfile','.gitpod','.filters','.in','.ico','.settings','.csproj','.resx','.sln','.cat','.c','.cpp','.cxx','.h','.hxx','.hpp','.h++','.sys','.cat','.inf','.service','.build','.rst','CMakeLists.txt','.cmake','.natvis','.ttf','.natstepfilter','.lua','.py','.jar','.java','.js','.ts','.enc','.bin','.toml','.lock')):
+                continue
+
+            try:
+                # Index the file
+                index_file(file_path)
+                print(f"Indexed file: {file_path}")
+            except Exception as e:
+                print(f"Failed to index {file_path}")
+                print(e)
+
+
+# Call the function to index the file system
+root_dir = "/home/rohan/"  # Specify the root directory of your file system
+index_file_system(root_dir)
