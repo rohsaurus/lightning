@@ -16,7 +16,7 @@ client = typesense.Client({
     'port': '8108',       # Update with the appropriate port
     'protocol': 'http'    # Use 'https' for secure connections
   }],
-  'api_key': 'GkxVS70yMTFS7RJ9BEz6sjpPG6Ij7kdqTx7tGLIZ0AM1fJ4X',  # Replace with your Typesense API key
+  'api_key': 'GkxVS70yMTFS7RJ9BEz6sjpPG6Ij7kdqTx7tGLIZ0AM1fJ4X',  # Replace with your Typesense API key (can get that from the typesense service)
   'connection_timeout_seconds': 2
 })
 
@@ -54,13 +54,26 @@ def index_file(file_path):
     print(f"Indexed file: {file_path}")
 
 
+def should_exclude_directory(dir_name):
+    excluded_dirs = ['build', 'temp', 'cache','bin','target','debug','release','dist','build','node_modules','venv','__pycache__','lib', 'packages','examples','OneDrive Personal', 'OneDrive MCVTS','miniconda3', 'R', 'fluttersdk','.*']
+    dir_name_lower = dir_name.lower()  # Convert dir_name to lowercase
+    excluded_dirs_lower = [d.lower() for d in excluded_dirs]  # Convert excluded_dirs to lowercase
+    # this is to make sure that case sensitivty is not an issue
+    return dir_name_lower.startswith('.') or dir_name_lower in excluded_dirs_lower
+
+
 def index_files_in_directory(directory):
-    excluded_dirs = ['build', 'temp', 'cache','bin','target','debug','release','dist','build','node_modules','venv','__pycache__', '.git', '.idea', '.vscode', '.pytest_cache', '.mypy_cache', '.cache', '.eggs', '.tox', '.ipynb_checkpoints', '.pytest_cache', '.mypy_cache', '.cache', '.eggs', '.tox', '.ipynb_checkpoints','lib','.config','.local','.vs','packages','examples','OneDrive Personal', 'OneDrive MCVTS','.var','.steam','miniconda3', 'fluttersdk','.zoom']
+    """
+    This function takes a directory path as input and returns a list of file paths
+    for all files in the directory (and its subdirectories) that are not excluded
+    based on their file extension. Excluded extensions are defined in the
+    `excluded_extensions` tuple.
+    """
     excluded_extensions = ('.o', '.a', '.so','.h','.pyc','.cfg','.class','.dll','.gitattributes','.gitignore','.gitmodules','.gitkeep','.gitlab-ci.yml','.gitpod.yml','.gitpod.Dockerfile','.gitpod.dockerfile','.gitpod','.filters','.in','.ico','.settings','.csproj','.resx','.sln','.cat','.c','.cpp','.cxx','.h','.hxx','.hpp','.h++','.sys','.cat','.inf','.service','.build','.rst','CMakeLists.txt','.cmake','.natvis','.ttf','.natstepfilter','.lua','.py','.jar','.java','.js','.ts','.enc','.bin','.toml','.lock')
     files_to_index = []
 
     for root, dirs, files in os.walk(directory):
-        dirs[:] = [d for d in dirs if d not in excluded_dirs]
+        dirs[:] = [d for d in dirs if not should_exclude_directory(d)]
 
         for file in files:
             if file.endswith(excluded_extensions):
@@ -69,7 +82,14 @@ def index_files_in_directory(directory):
     
     return files_to_index
 
+
 def index_batch(batch):
+    """
+    This function takes a list of file paths as input and indexes each file in the
+    list using the `index_file` function. The indexing is done concurrently using
+    a ThreadPoolExecutor. The function logs successful indexing of each file and
+    logs an error message if indexing fails for any file.
+    """
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {executor.submit(index_file, file_path): file_path for file_path in batch}
         for future in concurrent.futures.as_completed(futures):
