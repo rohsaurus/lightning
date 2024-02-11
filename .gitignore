@@ -1,3 +1,6 @@
 /indexer_systemd/target
 .vscode
 lightning_gui/target
+node_modules
+lightning/src-tauri/target
+lightning/node_modules

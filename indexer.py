@@ -109,5 +109,5 @@ def main(root_dir):
         index_batch(batch)
 
 if __name__ == "__main__":
-    root_dir = "/home/rohan/"
+    root_dir = "~/"
     main(root_dir)

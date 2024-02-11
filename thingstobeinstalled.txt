@@ -1,2 +1,15 @@
-libsystemd-dev package on system
-Linux dependancies for dioxus webview
+libsystemd-dev package on system (may not need now removed dioxus)
+Libsoup2.4-dev
+javascriptcoregtk-4.0
+
+
+sudo apt update
+sudo apt install libwebkit2gtk-4.0-dev \
+    build-essential \
+    curl \
+    wget \
+    file \
+    libssl-dev \
+    libgtk-3-dev \
+    libayatana-appindicator3-dev \
+    librsvg2-dev

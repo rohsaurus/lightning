@@ -1,4 +1,4 @@
-use inotify::{EventMask, Inotify, WatchMask};
+use inotify::{Inotify, WatchMask};
 use signal_hook::consts::signal::*;
 use signal_hook::flag as signal_flag;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -39,7 +39,7 @@ fn main() {
         .expect("Failed to add inotify watch");
     inotify
         .watches()
-        .add("/home/rohan/FlutterSDK", mask)
+        .add("/home/rohan/Downloads/OSX-KVM", mask)
         .expect("Failed to add inotify watch");
     loop {
         match term.load(Ordering::Relaxed) {
